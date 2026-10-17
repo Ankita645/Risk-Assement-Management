@@ -1,80 +1,380 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI-Based Software Release Risk Analyzer</title>
+
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#17243b;background:#f4f7fb}
-body{margin:0}.wrap{max-width:1040px;margin:34px auto;padding:0 18px}
+body{margin:0}
+.wrap{max-width:1040px;margin:34px auto;padding:0 18px}
 header{background:#132443;color:#fff;padding:26px 30px;border-radius:18px}
 header p{color:#b8d6e7;margin-bottom:0;line-height:1.5}
 main{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;align-items:start}
 section{background:white;border:1px solid #dce4ee;border-radius:16px;padding:22px;box-shadow:0 5px 20px #1527460a;min-width:0}
-h2{margin-top:0;font-size:19px}label{display:block;font-size:13px;font-weight:650;margin:13px 0 6px}
+h2{margin-top:0;font-size:19px}
+label{display:block;font-size:13px;font-weight:650;margin:13px 0 6px}
 input,select,textarea{box-sizing:border-box;width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;background:#fff;color:#17243b}
 textarea{min-height:120px;resize:vertical;line-height:1.5}
 button,.download{display:inline-block;margin-top:18px;padding:12px 16px;border:0;border-radius:10px;background:#087f8c;color:white;font-weight:700;cursor:pointer;text-align:center;text-decoration:none}
-button{width:100%}button:disabled{opacity:.6;cursor:wait}.download{background:#17365d;margin-top:10px}
-.result{min-height:250px}.pill{display:inline-block;padding:7px 11px;border-radius:999px;font-weight:750;width:max-content;background:#e5e7eb}
-.low{background:#dcfce7;color:#166534}.medium{background:#fef3c7;color:#92400e}.high{background:#fee2e2;color:#991b1b}
-small,.muted{color:#64748b;line-height:1.5}.muted{font-size:13px}.recommendations li{margin:8px 0;line-height:1.45}.rationale{line-height:1.55}.hidden{display:none}
-@media(max-width:760px){main{grid-template-columns:1fr}header{padding:22px}}
+button{width:100%}
+button:disabled{opacity:.6;cursor:wait}
+.download{background:#17365d;margin-top:10px}
+.result{min-height:250px}
+.pill{display:inline-block;padding:7px 11px;border-radius:999px;font-weight:750;width:max-content;background:#e5e7eb}
+.low{background:#dcfce7;color:#166534}
+.medium{background:#fef3c7;color:#92400e}
+.high{background:#fee2e2;color:#991b1b}
+small,.muted{color:#64748b;line-height:1.5}
+.muted{font-size:13px}
+.recommendations li{margin:8px 0;line-height:1.45}
+.rationale{line-height:1.55}
+.hidden{display:none}
+.github-panel{margin-top:18px;background:#fff;border:1px solid #dce4ee;border-radius:16px;padding:22px;box-shadow:0 5px 20px #1527460a}
+.github-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.github-grid .full{grid-column:1/-1}
+.github-status{font-size:13px;line-height:1.5;margin-bottom:0}
+.github-status.error{color:#b91c1c}
+.github-status.success{color:#166534}
+.github-status.info{color:#475569}
+.github-help{font-size:12px;color:#64748b;line-height:1.5}
+@media(max-width:760px){
+ main{grid-template-columns:1fr}
+ header{padding:22px}
+ .github-grid{grid-template-columns:1fr}
+ .github-grid .full{grid-column:auto}
+}
 </style>
 </head>
-<body><div class="wrap">
-<header><h1>AI-Based Software Release Risk Analyzer</h1><p>Groq LLM + LangChain + FastAPI · AI-generated decision support, not automatic release approval</p></header>
+
+<body>
+<div class="wrap">
+
+<header>
+  <h1>AI-Based Software Release Risk Analyzer</h1>
+  <p>GitHub MCP + Groq LLM + LangChain + FastAPI · AI-generated decision support, not automatic release approval</p>
+</header>
+
+<!-- GitHub integration -->
+<section class="github-panel">
+  <h2>GitHub Pull Request Integration</h2>
+  <p class="muted">
+    Fetch release metrics from a GitHub pull request using your backend's
+    GitHub MCP integration. Review the populated fields before assessment.
+  </p>
+
+  <div class="github-grid">
+    <div>
+      <label for="github_owner">Repository owner</label>
+      <input id="github_owner" value="Ankita645" autocomplete="off">
+    </div>
+
+    <div>
+      <label for="github_repo">Repository name</label>
+      <input id="github_repo" value="Risk-Assement-Management" autocomplete="off">
+    </div>
+
+    <div class="full">
+      <label for="github_pr">Pull request number</label>
+      <input id="github_pr" type="number" min="1" step="1" value="1">
+    </div>
+  </div>
+
+  <button type="button" id="fetch_github">
+    Fetch release metrics from GitHub
+  </button>
+
+  <p id="github_status" class="github-status info" role="status" aria-live="polite">
+    Enter repository details and fetch the pull request data.
+  </p>
+
+  <p class="github-help">
+    Your GitHub token stays on the backend. Do not enter it in this page.
+  </p>
+</section>
+
 <main>
-<section><h2>Release details</h2>
-<form id="form">
-<label for="changed_files">Changed files</label><input id="changed_files" type="number" min="0" max="1000000" value="12" required>
-<label for="changed_lines">Changed lines</label><input id="changed_lines" type="number" min="0" max="100000000" value="520" required>
-<label for="affected_modules">Affected modules</label><input id="affected_modules" type="number" min="0" max="100000" value="5" required>
-<label for="open_defects">Unresolved defects</label><input id="open_defects" type="number" min="0" max="1000000" value="3" required>
-<label for="criticality">Release criticality</label><select id="criticality" required><option value="low">Low</option><option value="medium">Medium</option><option value="high" selected>High</option></select>
-<label for="recent_failures">Recent release failures</label><input id="recent_failures" type="number" min="0" max="1000000" value="1" required>
-<label for="defect_description">Defect description</label><textarea id="defect_description" minlength="3" maxlength="5000" required placeholder="Describe the defect, affected functionality, impact, reproduction details, or known mitigation…">A defect has been reported in the account authorization flow. It may affect requests for multiple modules; regression testing is still in progress.</textarea>
-<button id="submit" type="submit">Assess risk and generate Excel</button>
-<p class="muted">The description and release details are sent to the configured Groq model. Do not enter passwords, API keys, customer data, or other sensitive production information.</p>
-</form></section>
-<section class="result" aria-live="polite"><h2>AI assessment</h2><div id="output"><p class="muted">Enter release details and submit to get a High, Medium, or Low classification.</p></div><a id="download" class="download hidden" href="#">Download Excel report (.xlsx)</a></section>
-</main></div>
+
+<section>
+  <h2>Release details</h2>
+
+  <form id="form">
+
+    <label for="changed_files">Changed files</label>
+    <input id="changed_files" type="number" min="0" max="1000000" value="12" required>
+
+    <label for="changed_lines">Changed lines</label>
+    <input id="changed_lines" type="number" min="0" max="100000000" value="520" required>
+
+    <label for="affected_modules">Affected modules</label>
+    <input id="affected_modules" type="number" min="0" max="100000" value="5" required>
+
+    <label for="open_defects">Unresolved defects</label>
+    <input id="open_defects" type="number" min="0" max="1000000" value="3" required>
+
+    <label for="criticality">Release criticality</label>
+    <select id="criticality" required>
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high" selected>High</option>
+    </select>
+
+    <label for="recent_failures">Recent release failures</label>
+    <input id="recent_failures" type="number" min="0" max="1000000" value="1" required>
+
+    <label for="defect_description">Defect description</label>
+    <textarea id="defect_description" minlength="3" maxlength="5000" required
+      placeholder="Describe the defect, affected functionality, impact, reproduction details, or known mitigation…">A defect has been reported in the account authorization flow. It may affect requests for multiple modules; regression testing is still in progress.</textarea>
+
+    <p class="muted">
+      GitHub values are editable after fetching. The description and release
+      details are sent to the configured Groq model. Do not enter passwords,
+      API keys, customer data, or other sensitive production information.
+    </p>
+
+    <button id="submit" type="submit">Assess risk and generate Excel</button>
+  </form>
+</section>
+
+<section class="result" aria-live="polite">
+  <h2>AI assessment</h2>
+
+  <div id="output">
+    <p class="muted">
+      Fetch GitHub data or enter release details manually, then submit to get
+      a High, Medium, or Low classification.
+    </p>
+  </div>
+
+  <a id="download" class="download hidden" href="#">
+    Download Excel report (.xlsx)
+  </a>
+</section>
+
+</main>
+</div>
+
 <script>
-const form=document.querySelector('#form');
-const output=document.querySelector('#output');
-const button=document.querySelector('#submit');
-const downloadLink=document.querySelector('#download');
-const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-form.addEventListener('submit',async event=>{
- event.preventDefault();
- if(!form.reportValidity()) return;
- button.disabled=true; button.textContent='Assessing with Groq…';
- downloadLink.classList.add('hidden');
- output.innerHTML='<p class="muted">Sending release details to the AI assessment service…</p>';
- const number=id=>Number(document.querySelector('#'+id).value);
- const payload={
-  changed_files:number('changed_files'),
-  changed_lines:number('changed_lines'),
-  affected_modules:number('affected_modules'),
-  open_defects:number('open_defects'),
-  criticality:document.querySelector('#criticality').value,
-  recent_failures:number('recent_failures'),
-  defect_description:document.querySelector('#defect_description').value.trim()
- };
- try{
-  const response=await fetch('/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const data=await response.json();
-  if(!response.ok) throw new Error(data.detail||'Assessment request failed');
-  const risk=String(data.risk_level||'').toLowerCase();
-  const recommendations=Array.isArray(data.recommendations)?data.recommendations:[];
-  output.innerHTML=`<span class="pill ${escapeHtml(risk)}">${escapeHtml(data.risk_level)} Risk</span>
-   <h3>Why this risk was assigned</h3><p class="rationale">${escapeHtml(data.rationale)}</p>
-   <h3>Recommended actions</h3><ul class="recommendations">${recommendations.map(item=>`<li>${escapeHtml(item)}</li>`).join('')}</ul>
-   <p class="muted">Model: ${escapeHtml(data.model)}<br>Assessed (UTC): ${escapeHtml(data.assessed_at_utc)}</p>
-   <p class="muted">${escapeHtml(data.note)}</p>`;
-  downloadLink.href=data.excel_url;
-  downloadLink.classList.remove('hidden');
- }catch(error){
-  output.innerHTML=`<p role="alert"><strong>Assessment failed:</strong> ${escapeHtml(error.message)}</p><p class="muted">Check that FastAPI is running, the Groq API key in ml/.env is valid, the model name is enabled for your account, and your network is connected.</p>`;
- }finally{button.disabled=false;button.textContent='Assess risk and generate Excel';}
+const form = document.querySelector('#form');
+const output = document.querySelector('#output');
+const submitButton = document.querySelector('#submit');
+const downloadLink = document.querySelector('#download');
+
+const githubButton = document.querySelector('#fetch_github');
+const githubStatus = document.querySelector('#github_status');
+
+/*
+ * The UI is assumed to be served by the same FastAPI application.
+ * If the UI is hosted separately, change this to the backend origin,
+ * for example: http://127.0.0.1:8000
+ */
+const API_BASE = '';
+
+const escapeHtml = value =>
+  String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+
+function setGithubStatus(message, type = 'info') {
+  githubStatus.textContent = message;
+  githubStatus.className = `github-status ${type}`;
+}
+
+/*
+ * Fetch GitHub MCP metrics from the existing FastAPI endpoint and
+ * populate the corresponding release form fields.
+ */
+githubButton.addEventListener('click', async () => {
+  const owner = document.querySelector('#github_owner').value.trim();
+  const repo = document.querySelector('#github_repo').value.trim();
+  const pullNumber = Number(
+    document.querySelector('#github_pr').value
+  );
+
+  if (!owner || !repo || !Number.isInteger(pullNumber) || pullNumber < 1) {
+    setGithubStatus(
+      'Enter a valid repository owner, repository name and PR number.',
+      'error'
+    );
+    return;
+  }
+
+  githubButton.disabled = true;
+  githubButton.textContent = 'Fetching GitHub data…';
+  setGithubStatus('Connecting to GitHub MCP through FastAPI…');
+
+  try {
+    const response = await fetch(`${API_BASE}/github/release-data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner: owner,
+        repo: repo,
+        pull_number: pullNumber
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        typeof data.detail === 'string'
+          ? data.detail
+          : `GitHub request failed (${response.status})`
+      );
+    }
+
+    const fieldIds = [
+      'changed_files',
+      'changed_lines',
+      'affected_modules',
+      'open_defects',
+      'criticality',
+      'recent_failures',
+      'defect_description'
+    ];
+
+    const missing = [];
+
+    for (const id of fieldIds) {
+      const field = document.getElementById(id);
+
+      if (!Object.prototype.hasOwnProperty.call(data, id)) {
+        missing.push(id);
+        continue;
+      }
+
+      if (field) {
+        field.value = data[id] ?? '';
+      }
+    }
+
+    // Remove browser validation errors left over from the old values.
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+      field.setCustomValidity('');
+    });
+
+    // The previous assessment no longer corresponds to the current inputs.
+    output.innerHTML =
+      '<p class="muted">GitHub metrics loaded. Submit the form to run a new risk assessment.</p>';
+
+    downloadLink.classList.add('hidden');
+
+    if (missing.length > 0) {
+      setGithubStatus(
+        `GitHub data received, but these fields were missing: ${missing.join(', ')}. Check the backend response.`,
+        'error'
+      );
+    } else {
+      setGithubStatus(
+        `Successfully loaded metrics for ${owner}/${repo} PR #${pullNumber}. Review the fields below before assessing risk.`,
+        'success'
+      );
+
+      document.querySelector('#changed_files').focus();
+    }
+
+  } catch (error) {
+    console.error('GitHub fetch failed:', error);
+
+    setGithubStatus(
+      `Could not fetch GitHub data: ${error.message}. Check that FastAPI is running and the endpoint is available.`,
+      'error'
+    );
+  } finally {
+    githubButton.disabled = false;
+    githubButton.textContent = 'Fetch release metrics from GitHub';
+  }
 });
-</script></body></html>
+
+/*
+ * Existing Groq assessment flow. This remains separate from the
+ * GitHub fetch operation.
+ */
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  if (!form.reportValidity()) return;
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'Assessing with Groq…';
+  downloadLink.classList.add('hidden');
+
+  output.innerHTML =
+    '<p class="muted">Sending release details to the AI assessment service…</p>';
+
+  const number = id => Number(document.querySelector('#' + id).value);
+
+  const payload = {
+    changed_files: number('changed_files'),
+    changed_lines: number('changed_lines'),
+    affected_modules: number('affected_modules'),
+    open_defects: number('open_defects'),
+    criticality: document.querySelector('#criticality').value,
+    recent_failures: number('recent_failures'),
+    defect_description: document.querySelector('#defect_description').value.trim()
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/assess`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Assessment request failed');
+    }
+
+    const risk = String(data.risk_level || '').toLowerCase();
+    const recommendations = Array.isArray(data.recommendations)
+      ? data.recommendations
+      : [];
+
+    output.innerHTML = `
+      <span class="pill ${escapeHtml(risk)}">${escapeHtml(data.risk_level)} Risk</span>
+      <h3>Why this risk was assigned</h3>
+      <p class="rationale">${escapeHtml(data.rationale)}</p>
+      <h3>Recommended actions</h3>
+      <ul class="recommendations">
+        ${recommendations.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+      </ul>
+      <p class="muted">
+        Model: ${escapeHtml(data.model)}<br>
+        Assessed (UTC): ${escapeHtml(data.assessed_at_utc)}
+      </p>
+      <p class="muted">${escapeHtml(data.note)}</p>
+    `;
+
+    if (data.excel_url) {
+      downloadLink.href = data.excel_url;
+      downloadLink.classList.remove('hidden');
+    }
+
+  } catch (error) {
+    console.error('Assessment failed:', error);
+
+    output.innerHTML = `
+      <p role="alert"><strong>Assessment failed:</strong> ${escapeHtml(error.message)}</p>
+      <p class="muted">
+        Check that FastAPI is running, the Groq API key in ml/.env is valid,
+        the configured model is available, and your network is connected.
+      </p>
+    `;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Assess risk and generate Excel';
+  }
+});
+</script>
+
+</body>
+</html>
