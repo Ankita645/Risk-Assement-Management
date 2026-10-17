@@ -20,12 +20,6 @@ from pydantic import BaseModel, Field
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
-from dotenv import load_dotenv
-from pathlib import Path
-import os
-
-load_dotenv(Path(__file__).parent / "ml" / ".env")
-
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 load_dotenv(BASE_DIR / ".env")
@@ -39,6 +33,9 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 RiskLevel = Literal["High", "Medium", "Low"]
 
+from github_service import router as github_router
+
+app.include_router(github_router)
 
 class ReleaseInput(BaseModel):
     changed_files: int = Field(ge=0, le=1_000_000, description="Number of files changed")
