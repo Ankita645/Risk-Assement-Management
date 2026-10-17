@@ -1,0 +1,9 @@
+{
+  "changed_files": 12,
+  "changed_lines": 520,
+  "affected_modules": 5,
+  "open_defects": 3,
+  "criticality": "high",
+  "recent_failures": 1,
+  "defect_description": "A defect has been reported in the account authorization flow. It may affect requests for multiple modules; regression testing is still in progress."
+}
